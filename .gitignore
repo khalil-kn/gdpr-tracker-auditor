@@ -1,0 +1,23 @@
+# Dependencies: always reinstalled with npm install
+node_modules/
+
+# Build output: always regenerated from source
+dist/
+.angular/
+coverage/
+*.log
+
+# Secrets: never commit them; commit .env.example only
+.env
+.env.*
+!.env.example
+
+# Playwright test output
+test-results/
+playwright-report/
+
+# OS and editor files
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea/
