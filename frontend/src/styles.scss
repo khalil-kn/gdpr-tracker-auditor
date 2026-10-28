@@ -1,0 +1,67 @@
+/* Design tokens from the "Foundations" board. Use var(--name) everywhere; never hard-code a colour. */
+:root {
+  /* Neutral chrome */
+  --ground: #0e0e12;   /* page and rail */
+  --surface: #17171d;  /* cards */
+  --raised: #1f1f27;   /* hover */
+  --active: #2a2a34;   /* selected */
+  --border: #26262f;   /* card edges, rules */
+  --control: #6b6b78;  /* field edges */
+  --text: #f4f4f6;
+  --muted: #a1a1ad;
+
+  /* Data: one colour per tracker category */
+  --cat-analytics: #38c6f4;
+  --cat-advertising: #ff5fa2;
+  --cat-social: #ff9a3d;
+  --cat-functional: #5ad19a;
+  --cat-essential: #9aa3b5;
+  --cat-unclassified: #ffd43b;
+
+  /* Risk */
+  --risk-high: #ff5468;
+  --risk-medium: #ffb547;
+  --risk-ok: #5ad19a;
+
+  /* Type */
+  --font-sans: 'Archivo', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 20px;
+  font-variant-numeric: tabular-nums;
+}
+
+a {
+  color: var(--text);
+}
+
+/* Page title and lead line, sizes from the Foundations type scale */
+h1 {
+  margin: 0 0 8px;
+  font-size: 26px;
+  line-height: 32px;
+  font-weight: 700;
+  font-stretch: 115%;
+}
+
+.lead {
+  margin: 0;
+  font-size: 15px;
+  line-height: 22px;
+  color: var(--muted);
+}
+
+code {
+  font-family: var(--font-mono);
+}
