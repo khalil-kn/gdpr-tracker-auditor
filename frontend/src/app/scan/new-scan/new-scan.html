@@ -1,0 +1,106 @@
+<div class="title-row">
+  <div>
+    <nav class="crumbs" aria-label="Breadcrumb"><a routerLink="/scans">Scans</a><span aria-hidden="true">/</span><span>New scan</span></nav>
+    <h1 class="t-title">New scan</h1>
+    <p class="subline">The scanner opens the address in an isolated browser, once for each consent state, and records everything the page contacts.</p>
+  </div>
+</div>
+
+@if (serverError(); as err) {
+  <div class="notice notice-error" role="alert">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5h.01"/></svg>
+    <span><span class="t-strong">The scan was not started.</span> {{ err }}</span>
+  </div>
+}
+
+<form class="g12" (ngSubmit)="start()">
+  <section class="panel s8" aria-labelledby="addr-h">
+    <div class="panel-h"><h2 id="addr-h" class="t-section">Website address</h2></div>
+    <div class="panel-b" style="display: flex; flex-direction: column; gap: 24px">
+      <div class="field">
+        <label for="ns-url" class="sr">Website address</label>
+        @let c = check();
+        @let bad = c.kind !== 'ok' && c.kind !== 'empty';
+        <input id="ns-url" name="url" class="input input-lg" [class.is-error]="bad" type="text" inputmode="url"
+               spellcheck="false" autocomplete="off" placeholder="https://www.example.com"
+               [ngModel]="url()" (ngModelChange)="url.set($event)"
+               [attr.aria-invalid]="bad" aria-describedby="ns-url-msg">
+        @if (c.kind === 'ok') {
+          <span id="ns-url-msg" class="hint" style="font-size: 13px; line-height: 18px">Will scan {{ c.url }}</span>
+        } @else if (c.kind === 'empty') {
+          <span id="ns-url-msg" class="hint" style="font-size: 13px; line-height: 18px">{{ c.message }}</span>
+        } @else {
+          <span id="ns-url-msg" class="error-text" role="alert">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true" style="flex: none; margin-top: 1px"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5h.01"/></svg>{{ c.message }}
+          </span>
+        }
+      </div>
+
+      <fieldset style="border: 0; margin: 0; padding: 0; display: flex; flex-direction: column">
+        <legend class="field-label" style="padding: 0; margin-bottom: 4px">Consent states</legend>
+        <p class="hint" style="margin-bottom: 4px">Each state runs in a fresh browser, so cookies from one can't leak into another.</p>
+        <label class="check-row" style="cursor: not-allowed">
+          <input class="check" type="checkbox" checked disabled>
+          <span style="display: flex; flex-direction: column"><span class="t-strong">Before consent</span><span class="small muted">Always recorded. The banner is left unanswered for the whole observation time.</span></span>
+        </label>
+        <label class="check-row">
+          <input class="check" type="checkbox" name="reject" [ngModel]="reject()" (ngModelChange)="reject.set($event)">
+          <span style="display: flex; flex-direction: column"><span class="t-strong">After rejecting</span><span class="small muted">The scanner clicks the banner's reject button, then keeps watching.</span></span>
+        </label>
+        <label class="check-row">
+          <input class="check" type="checkbox" name="accept" [ngModel]="accept()" (ngModelChange)="accept.set($event)">
+          <span style="display: flex; flex-direction: column"><span class="t-strong">After accepting</span><span class="small muted">The scanner clicks the banner's accept button, then keeps watching.</span></span>
+        </label>
+      </fieldset>
+
+      <div class="g12" style="gap: 12px">
+        <div class="field s6">
+          <label for="ns-obs">Observation time per state</label>
+          <select id="ns-obs" name="obs" class="select" [ngModel]="observation()" (ngModelChange)="observation.set(+$event)">
+            <option [ngValue]="10">10 seconds</option>
+            <option [ngValue]="15">15 seconds</option>
+            <option [ngValue]="30">30 seconds</option>
+          </select>
+        </div>
+        <div class="field s6">
+          <span class="field-label" id="ns-dev-l">Browser window</span>
+          <div class="seg" role="group" aria-labelledby="ns-dev-l">
+            @for (v of viewports; track v.id) {
+              <button type="button" [attr.aria-pressed]="viewport() === v.id" (click)="viewport.set(v.id)">{{ v.label }}</button>
+            }
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <span class="field-label">Banner buttons</span>
+        <p class="small muted">Found automatically by their text, for example Reject all, Alle ablehnen, Tout refuser, Accept all.</p>
+      </div>
+    </div>
+    <div class="panel-f" style="flex-wrap: wrap">
+      <span><span class="t-strong">{{ estimate() }}</span><span class="muted">&nbsp;for {{ stateCount() }} consent {{ stateCount() === 1 ? 'state' : 'states' }}</span></span>
+      <span style="display: flex; align-items: center; gap: 12px">
+        @if (c.kind !== 'ok') {
+          <span class="small muted">{{ c.kind === 'empty' ? 'Enter an address first.' : 'Fix the address to start.' }}</span>
+        }
+        <button class="btn btn-primary" type="submit" [disabled]="c.kind !== 'ok' || submitting()">
+          {{ submitting() ? 'Starting…' : 'Start scan' }}
+        </button>
+      </span>
+    </div>
+  </section>
+
+  <div class="s4 stack">
+    <section class="panel" aria-labelledby="chk-h">
+      <div class="panel-h"><h2 id="chk-h" class="t-section">Address checks</h2></div>
+      <ul class="panel-b" style="display: flex; flex-direction: column; gap: 12px">
+        @for (k of checks(); track k.title) {
+          <li style="display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 8px">
+            <span class="mk {{ k.cls }}" aria-hidden="true" style="margin-top: 3px"></span>
+            <span><span class="t-strong">{{ k.title }}</span><span class="sr"> {{ k.state }}</span><span class="small muted" style="display: block">{{ k.detail }}</span></span>
+          </li>
+        }
+      </ul>
+    </section>
+  </div>
+</form>

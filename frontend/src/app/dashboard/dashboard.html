@@ -1,0 +1,84 @@
+<div class="title-row">
+  <div>
+    <p class="crumbs">Tracker Auditor</p>
+    <h1 class="t-display">Overview</h1>
+    @if (scans()?.length) {
+      <p class="subline">{{ kpis().findings }} findings across the latest scan of {{ kpis().sites }} {{ kpis().sites === 1 ? 'site' : 'sites' }}.</p>
+    }
+  </div>
+  <div class="actions"><a class="btn btn-outline" routerLink="/scans">All scans</a><a class="btn btn-primary btn-lg" routerLink="/scans/new">New scan</a></div>
+</div>
+
+@if (error(); as err) {
+  <div class="notice notice-error" role="alert"><span><span class="t-strong">Can't load the scans.</span> {{ err }}</span></div>
+} @else if (scans() === null) {
+  <section class="panel" aria-busy="true"><div class="panel-b" style="padding-top: 24px"><span class="sk" style="height: 280px"></span></div></section>
+} @else if (scans()!.length === 0) {
+  <section class="panel">
+    <div class="empty" style="padding: 48px 32px">
+      <h2 class="t-title">Scan your first website</h2>
+      <p class="muted" style="max-width: 60ch">The scanner opens the site in an isolated browser before consent, after rejecting and after accepting, then reports every tracker, cookie and third party it saw.</p>
+      <a class="btn btn-primary btn-lg" routerLink="/scans/new">New scan</a>
+    </div>
+  </section>
+} @else {
+  <div class="g12">
+    @if (worst(); as w) {
+      @let b = band(w.score!);
+      <section class="panel s8" [class.panel-risk]="w.score! >= 50" aria-labelledby="alert-h">
+        <div class="alert">
+          <div style="display: flex; flex-direction: column; gap: 10px">
+            <span class="pill {{ w.score! >= 50 ? 'p-high' : w.score! >= 25 ? 'p-med' : 'p-ok' }}" style="align-self: flex-start">Highest exposure</span>
+            <h2 id="alert-h" class="t-title">{{ w.host }}</h2>
+            <p style="display: flex; align-items: flex-end; gap: 12px">
+              <span class="big {{ b.cls }}">{{ w.score }}</span>
+              <span style="padding-bottom: 12px"><span class="t-strong {{ b.cls }}" style="display: block">{{ b.label }} exposure</span><span class="small muted">Scanned {{ w.createdAt | date: 'd MMM, HH:mm' }}</span></span>
+            </p>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 16px">
+            <p class="t-lead">{{ w.findingCount }} {{ w.findingCount === 1 ? 'finding' : 'findings' }} to review. The score describes what the browser saw, not legal compliance.</p>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap">
+              <a class="btn btn-primary" [routerLink]="['/scans', w.id]">Open report</a>
+              <a class="btn btn-outline" [routerLink]="['/scans', w.id, 'consent']">See consent behaviour</a>
+            </div>
+          </div>
+        </div>
+      </section>
+    }
+    <div class="kgrid" [class.s4]="worst()" [class.s12]="!worst()" role="group" aria-label="This workspace">
+      <div class="kpi"><span class="t-label">Sites</span><span class="t-kpi">{{ kpis().sites }}</span><span class="small muted">{{ kpis().scans }} scans in total</span></div>
+      <div class="kpi"><span class="t-label">Completed</span><span class="t-kpi">{{ kpis().completed }}</span><span class="small muted">with a report</span></div>
+      <div class="kpi"><span class="t-label">Running</span><span class="t-kpi" [class.c-an]="kpis().running">{{ kpis().running }}</span><span class="small muted">queued or scanning</span></div>
+      <div class="kpi"><span class="t-label">Failed</span><span class="t-kpi" [class.c-bad]="kpis().failed">{{ kpis().failed }}</span><span class="small muted">nothing recorded</span></div>
+    </div>
+  </div>
+
+  <section class="panel" aria-labelledby="sites-h">
+    <div class="panel-h"><div><h2 id="sites-h" class="t-section">Sites</h2><p class="small muted">The latest scan of each site.</p></div></div>
+    <ul>
+      @for (s of sites(); track s.host) {
+        <li class="site">
+          <div style="display: flex; flex-direction: column; gap: 6px; min-width: 0">
+            <a class="row-link" [routerLink]="link(s)" style="font-size: 16px">{{ s.host }}</a>
+            <span class="small muted">{{ s.status === 'FAILED' ? 'Tried' : 'Scanned' }} {{ s.createdAt | date: 'd MMM, HH:mm' }}</span>
+          </div>
+          <span><span class="pill {{ statusPill[s.status].cls }}">{{ statusPill[s.status].label }}</span></span>
+          <div class="expo">
+            @if (s.score !== null) {
+              @let b = band(s.score);
+              <span style="display: flex; align-items: baseline; gap: 8px"><b class="{{ b.cls }}">{{ s.score }}</b><span class="small muted">{{ b.label }}</span></span>
+              <span class="ebar"><i [style.width.%]="s.score" [style.background]="b.color"></i></span>
+            } @else {
+              <span class="small muted">{{ s.failureReason ?? 'Scored after the last state' }}</span>
+            }
+          </div>
+          <div class="num ac">
+            @if (s.status === 'FAILED') { <a class="btn btn-sm btn-outline" routerLink="/scans/new">Scan again</a> }
+            @else { <a class="btn btn-sm btn-outline" [routerLink]="link(s)">{{ s.status === 'COMPLETED' ? 'Open report' : 'Watch' }}</a> }
+          </div>
+        </li>
+      }
+    </ul>
+    <div class="panel-f"><span class="small muted">{{ sites().length }} {{ sites().length === 1 ? 'site' : 'sites' }}</span><a class="link small" routerLink="/scans">All {{ kpis().scans }} scans</a></div>
+  </section>
+}

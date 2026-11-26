@@ -1,0 +1,116 @@
+<div class="g12">
+  <section class="panel s8" aria-labelledby="orb-h">
+    <div class="panel-h">
+      <div><h2 id="orb-h" class="t-section">Third-party map</h2><p class="small muted">{{ stateLine() }}</p></div>
+      <div class="seg" role="group" aria-label="Consent state">
+        @for (st of states(); track st) {
+          <button type="button" [attr.aria-pressed]="state() === st" (click)="state.set(st)">{{ stateShort[st] }}</button>
+        }
+      </div>
+    </div>
+    <div class="panel-b">
+      <div class="orb" role="img" [attr.aria-label]="'Map of third-party services, ' + liveCount() + ' requests in total'">
+        <span class="rg" style="width: 50%; height: 50%"></span>
+        <span class="rg" style="width: 80%; height: 80%"></span>
+        @for (n of nodes(); track n.key) {
+          <span class="sp" [class.live]="n.on" [style.width.%]="n.len" [style.transform]="'rotate(' + n.deg + 'deg)'"></span>
+        }
+        <div class="core"><b>{{ liveCount() }}</b><span class="small" style="font-weight: 600">third-party<br>requests</span></div>
+        @for (n of nodes(); track n.key) {
+          <button class="nd" [class.on]="n.on" type="button" [style.left.%]="n.x" [style.top.%]="n.y"
+                  [attr.aria-pressed]="selected()?.key === n.key" [attr.aria-label]="n.aria" (click)="selectedKey.set(n.key)">
+            <span class="dot" [class.off]="!n.on" [class.flag]="n.flag" [style.width.px]="n.size" [style.height.px]="n.size" [style.background]="n.color"></span>
+            <span class="nl">{{ n.label }}</span>
+          </button>
+        }
+      </div>
+    </div>
+    <div class="panel-f" style="flex-wrap: wrap">
+      <div class="legend">
+        @for (c of ['Analytics', 'Advertising', 'Social', 'Functional', 'Essential', 'Unknown']; track c) {
+          <span class="small" [attr.data-cat]="c">{{ c === 'Unknown' ? 'Unclassified' : c }}</span>
+        }
+      </div>
+      <span class="small muted">Red ring: tracking without consent. Inner ring: present before any choice. Outer ring: only later. Dot size: request count.</span>
+    </div>
+  </section>
+
+  @if (selected(); as s) {
+    <section class="panel s4" aria-labelledby="sel-h" aria-live="polite">
+      <div class="panel-h" style="align-items: flex-start">
+        <div><h2 id="sel-h" class="t-section" [attr.data-cat]="s.category">{{ s.name }}</h2><p class="small muted" style="margin-top: 4px">{{ s.category }}, {{ s.provider }}</p></div>
+        <span class="pill {{ assessmentPill[s.assessment] }}">{{ s.assessment }}</span>
+      </div>
+      <div class="panel-b" style="display: flex; flex-direction: column; gap: 20px">
+        <p>{{ s.description }}</p>
+        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+          @for (st of states(); track st) {
+            <div class="count-box">
+              <span class="fig" [class.c-bad]="s.tracking && st !== 'ACCEPTED' && s.counts[st] > 0" style="font-size: 32px; line-height: 32px">{{ s.counts[st] }}</span>
+              <span class="small muted">{{ stateShort[st] }}</span>
+            </div>
+          }
+        </div>
+        <div>
+          <h3 class="small muted" style="font-weight: 500; margin-bottom: 6px">Domains</h3>
+          <ul>@for (d of s.domains; track d) { <li class="dom-li"><span class="mono">{{ d }}</span></li> }</ul>
+        </div>
+        <div><h3 class="small muted" style="font-weight: 500; margin-bottom: 6px">First request</h3><p>{{ firstSeen(s.firstMs) }}</p></div>
+        @if (s.assessment === 'Potential issue') {
+          <a class="btn btn-primary" routerLink="../findings" style="align-self: flex-start">Review the findings</a>
+        }
+      </div>
+    </section>
+  }
+
+  <section class="panel s12" aria-labelledby="mx-h">
+    <div class="panel-h">
+      <div><h2 id="mx-h" class="t-section">Requests by consent state</h2><p class="small muted">A dash means none were seen. A red triangle marks tracking where no consent was given.</p></div>
+      <div class="seg" role="group" aria-label="Services shown">
+        <button type="button" [attr.aria-pressed]="!onlyTracking()" (click)="onlyTracking.set(false)">All services <span style="opacity: 0.7">{{ all().length }}</span></button>
+        <button type="button" [attr.aria-pressed]="onlyTracking()" (click)="onlyTracking.set(true)">Tracking only</button>
+      </div>
+    </div>
+    @if (rows().length) {
+      <div class="tbl-wrap">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th scope="col">Service</th><th scope="col" class="hide-sm">Category</th>
+              @for (st of states(); track st) { <th scope="col" class="num">{{ stateShort[st] }}</th> }
+              <th scope="col">Assessment</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (s of rows(); track s.key) {
+              <tr [class.is-selected]="selected()?.key === s.key">
+                <td>
+                  <button class="pick" type="button" [attr.aria-pressed]="selected()?.key === s.key" (click)="selectedKey.set(s.key)">{{ s.name }}</button>
+                  <span class="sub">{{ s.domains.length }} {{ s.domains.length === 1 ? 'domain' : 'domains' }}</span>
+                </td>
+                <td class="hide-sm"><span [attr.data-cat]="s.category">{{ s.category }}</span></td>
+                @for (st of states(); track st) {
+                  <td class="num">
+                    @if (s.counts[st] > 0) {
+                      <span class="cell-hit" [class.issue]="s.tracking && st !== 'ACCEPTED'">{{ s.counts[st] }}</span>
+                    } @else { <span class="dash" aria-label="none">—</span> }
+                  </td>
+                }
+                <td><span class="pill {{ assessmentPill[s.assessment] }}">{{ s.assessment }}</span></td>
+              </tr>
+            }
+          </tbody>
+          <tfoot>
+            <tr class="tot">
+              <td class="t-strong">{{ onlyTracking() ? 'Tracking requests' : 'All third-party requests' }}</td><td class="hide-sm"></td>
+              @for (t of totals(); track $index) { <td class="num fig" style="font-size: 17px">{{ t }}</td> }
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    } @else {
+      <div class="empty"><p class="t-strong">No third-party services were seen.</p><p class="muted">Every request went to the site itself.</p></div>
+    }
+  </section>
+</div>

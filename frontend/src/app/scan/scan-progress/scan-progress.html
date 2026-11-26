@@ -1,0 +1,59 @@
+@let s = scan();
+<div class="title-row">
+  <div>
+    <nav class="crumbs" aria-label="Breadcrumb"><a routerLink="/scans">Scans</a><span aria-hidden="true">/</span><span class="mono">{{ id() }}</span></nav>
+    <h1 class="t-title">
+      @if (s?.status === 'COMPLETED') { Scanned {{ s!.host }} } @else if (s?.status === 'FAILED') { Scan of {{ s!.host }} failed } @else { Scanning {{ s?.host ?? '…' }} }
+    </h1>
+    <p class="subline">You can leave this page; the scan keeps running and appears under Scans.</p>
+  </div>
+  <div class="actions">
+    <span class="fig" style="font-size: 30px; line-height: 34px" aria-live="off">{{ elapsed() }}</span>
+    @if (s && !finished()) { <span class="small muted" style="margin-right: 12px">of about {{ expected() }}</span> }
+    @if (s?.status === 'COMPLETED') { <a class="btn btn-primary" [routerLink]="['/scans', id()]">Open report</a> }
+    @if (s?.status === 'FAILED') { <a class="btn btn-primary" routerLink="/scans/new">Start a new scan</a> }
+  </div>
+</div>
+
+@if (error(); as err) {
+  <div class="notice notice-error" role="alert"><span><span class="t-strong">Can't load this scan.</span> {{ err }}</span></div>
+}
+@if (s?.status === 'COMPLETED') {
+  <div class="notice" role="status">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5ad19a" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg>
+    <span><span class="t-strong">Scan complete in {{ elapsed() }}.</span> Exposure {{ s!.score }} of 100 with {{ s!.findingCount }} findings to review.</span>
+  </div>
+}
+@if (s?.status === 'FAILED') {
+  <div class="notice notice-error" role="status"><span><span class="t-strong">Nothing was recorded.</span> {{ s!.failureReason ?? 'The scan stopped before it finished.' }}</span></div>
+}
+
+@if (s) {
+  <section class="panel" aria-labelledby="steps-h">
+    <div class="panel-h">
+      <h2 id="steps-h" class="t-section">Steps</h2>
+      <span class="pill {{ statusPill[s.status].cls }}" aria-live="polite">{{ statusPill[s.status].label }}</span>
+    </div>
+    <ol>
+      <li class="stage">
+        <span class="sdot" [class.sdot-done]="s.status !== 'PENDING'" [class.sdot-now]="s.status === 'PENDING'" aria-hidden="true"></span>
+        <span style="display: flex; flex-direction: column"><span class="t-strong">Check the address</span><span class="small muted">Resolved and refused if it is private, loopback or a metadata endpoint.</span></span>
+      </li>
+      @for (state of s.consentStates; track state) {
+        <li class="stage">
+          <span class="sdot" [class.sdot-done]="s.status === 'COMPLETED'" [class.sdot-now]="s.status === 'RUNNING'" aria-hidden="true"></span>
+          <span style="display: flex; flex-direction: column"><span class="t-strong">{{ stateLabel[state] }}</span><span class="small muted">{{ s.observationSeconds }} s in a fresh browser</span></span>
+        </li>
+      }
+      <li class="stage">
+        <span class="sdot" [class.sdot-done]="s.status === 'COMPLETED'" aria-hidden="true"></span>
+        <span style="display: flex; flex-direction: column"><span class="t-strong">Classify and score</span><span class="small muted">Against the tracker library</span></span>
+      </li>
+    </ol>
+    @if (s.status === 'RUNNING') {
+      <div class="panel-b" style="padding-top: 16px"><div class="track" style="height: 28px" aria-hidden="true"><span class="sweep"></span></div></div>
+    }
+  </section>
+} @else if (!error()) {
+  <section class="panel" aria-busy="true"><div class="panel-b" style="padding-top: 24px"><span class="sk" style="height: 120px"></span></div></section>
+}

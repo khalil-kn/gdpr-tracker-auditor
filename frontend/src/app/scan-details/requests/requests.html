@@ -1,0 +1,43 @@
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; align-items: center">
+  <div class="seg" role="group" aria-label="Consent state">
+    @for (s of states(); track s.id) {
+      <button type="button" [attr.aria-pressed]="state() === s.id" (click)="state.set(s.id)">{{ stateShort[s.id] }} <span class="muted" style="font-weight: 400">{{ s.count }}</span></button>
+    }
+  </div>
+  <div class="seg" role="group" aria-label="Domains shown">
+    @for (f of filters(); track f.id) {
+      <button type="button" [attr.aria-pressed]="filter() === f.id" (click)="filter.set(f.id)">{{ f.label }} <span class="muted" style="font-weight: 400">{{ f.count }}</span></button>
+    }
+  </div>
+</div>
+
+<section class="panel" aria-labelledby="rq-h">
+  <div class="panel-h">
+    <div><h2 id="rq-h" class="t-section">Domains contacted</h2><p class="small muted">{{ shown() }}</p></div>
+    <span class="small muted">First or third party decided by registrable domain (Public Suffix List)</span>
+  </div>
+  @if (rows().length) {
+    <div class="tbl-wrap">
+      <table class="tbl">
+        <thead><tr><th scope="col">Domain</th><th scope="col">Service</th><th scope="col" class="hide-sm">Category</th><th scope="col" class="hide-sm">Resource types</th><th scope="col" class="num">Requests</th></tr></thead>
+        <tbody>
+          @for (r of rows(); track r.hostname) {
+            <tr>
+              <td><span class="mono">{{ r.hostname }}</span><span class="sub">{{ r.thirdParty ? 'Third party' : 'First party' }}</span></td>
+              <td>{{ r.service }}</td>
+              <td class="hide-sm">@if (r.category) { <span [attr.data-cat]="r.category">{{ r.category }}</span> } @else { <span class="muted">First party</span> }</td>
+              <td class="hide-sm muted">{{ r.types.join(', ') }}</td>
+              <td class="num" style="width: 160px">
+                <span class="t-strong">{{ r.count }}</span>
+                <span class="rq-bar" [class.trk]="r.tracking" [style.width.%]="r.count / max() * 100"></span>
+              </td>
+            </tr>
+          }
+        </tbody>
+        <tfoot><tr class="tot"><td class="t-strong">Total</td><td></td><td class="hide-sm"></td><td class="hide-sm"></td><td class="num t-strong">{{ total() }}</td></tr></tfoot>
+      </table>
+    </div>
+  } @else {
+    <div class="empty"><p class="t-strong">No domains match this filter.</p><p class="muted">That is an honest zero for this consent state.</p></div>
+  }
+</section>
