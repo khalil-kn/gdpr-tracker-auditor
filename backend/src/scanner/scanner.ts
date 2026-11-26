@@ -4,6 +4,7 @@
 import { chromium, type Browser, type BrowserContextOptions, type LaunchOptions, type Page } from 'playwright';
 import type { ConsentState, SameSite, StateRun, Viewport } from '../scans/model.ts';
 import { findBannerButton } from './consent.ts';
+import { BLOCKED_HEADER, startEgressProxy, type EgressOptions } from './egressProxy.ts';
 import type { RequestGuard } from './requestGuard.ts';
 
 export interface RawRequest {
@@ -39,6 +40,8 @@ export interface ScanOptions {
   guard: RequestGuard;
   launchOptions?: LaunchOptions;
   navigationTimeoutMs?: number;
+  /** Send all browser traffic through a fresh egress proxy (egressProxy.ts). Off only in tests that need loopback. */
+  egress?: EgressOptions;
 }
 
 /** An error whose message is safe to show to the user (no stack traces, no internals). */
@@ -76,6 +79,8 @@ function navigationError(err: unknown, timeoutMs: number): ScanError {
   if (msg.includes('ERR_NAME_NOT_RESOLVED')) return new ScanError('The domain name could not be resolved.');
   if (msg.includes('ERR_CERT')) return new ScanError('The website’s HTTPS certificate is not valid.');
   if (/ERR_CONNECTION|ERR_ADDRESS|ERR_TIMED_OUT/.test(msg)) return new ScanError('The website could not be reached.');
+  // Through the egress proxy, a refused or unresolvable host ends the HTTPS tunnel before it starts.
+  if (msg.includes('ERR_TUNNEL_CONNECTION_FAILED')) return new ScanError('The website could not be reached, or its address is private, so the scan was stopped.');
   return new ScanError('The page could not be loaded.');
 }
 
@@ -116,11 +121,14 @@ async function observeState(browser: Browser, o: ScanOptions, state: ConsentStat
     const page: Page = await context.newPage();
     const navTimeout = o.navigationTimeoutMs ?? 30_000;
     t0 = Date.now();
+    let blocked = false;
     try {
-      await page.goto(o.url, { waitUntil: 'domcontentloaded', timeout: navTimeout });
+      const response = await page.goto(o.url, { waitUntil: 'domcontentloaded', timeout: navTimeout });
+      blocked = response?.headers()[BLOCKED_HEADER] === '1';
     } catch (err) {
       throw navigationError(err, navTimeout);
     }
+    if (blocked) throw new ScanError('The address led to a private or blocked network address, so the scan was stopped.');
 
     const windowEnd = t0 + o.observationSeconds * 1000;
     const bannerWait = () => Math.max(0, Math.min(BANNER_WAIT_MS, windowEnd - Date.now()));
@@ -156,12 +164,21 @@ async function observeState(browser: Browser, o: ScanOptions, state: ConsentStat
 }
 
 export async function scanSite(o: ScanOptions): Promise<Observation> {
-  const browser = await chromium.launch(o.launchOptions);
+  const proxy = o.egress ? await startEgressProxy(o.egress) : null;
   try {
-    const out: Observation = { states: [], requests: [], cookies: [] };
-    for (const state of o.consentStates) await observeState(browser, o, state, out);
-    return out;
+    const browser = await chromium.launch({
+      ...o.launchOptions,
+      // '<-loopback>' undoes Chromium's built-in rule that skips the proxy for localhost, so nothing goes direct.
+      ...(proxy && { proxy: { server: proxy.url, bypass: '<-loopback>' } }),
+    });
+    try {
+      const out: Observation = { states: [], requests: [], cookies: [] };
+      for (const state of o.consentStates) await observeState(browser, o, state, out);
+      return out;
+    } finally {
+      await browser.close().catch(() => {});
+    }
   } finally {
-    await browser.close().catch(() => {});
+    await proxy?.close();
   }
 }

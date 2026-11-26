@@ -113,3 +113,20 @@ export interface ScanReport extends ScanSummary {
   findings: Finding[];
   privacyScore: PrivacyScore | null;
 }
+
+/** GET /api/auth/me, POST /api/auth/login and /register */
+export interface User {
+  id: string;
+  email: string;
+}
+
+/** GET /api/auth/config */
+export interface AuthConfig {
+  registration: boolean;
+  passwordMin: number;
+}
+
+/** GET /api/trackers: an entry of the tracker library, with the cookie-name patterns that identify it. */
+export interface LibraryTracker extends Tracker {
+  cookiePatterns: string[];
+}

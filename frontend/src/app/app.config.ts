@@ -4,6 +4,7 @@ import { provideRouter, withComponentInputBinding } from '@angular/router';
 
 import { routes } from './app.routes';
 import { demoApiInterceptor } from './core/api/demo-api.interceptor';
+import { authInterceptor } from './core/auth/auth.interceptor';
 
 /** Serve sample data instead of calling Express, for working on the UI without the backend. Dev builds only. */
 export const USE_DEMO_API = isDevMode() && false;
@@ -12,6 +13,6 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes, withComponentInputBinding()),
-    provideHttpClient(withInterceptors(USE_DEMO_API ? [demoApiInterceptor] : [])),
+    provideHttpClient(withInterceptors(USE_DEMO_API ? [authInterceptor, demoApiInterceptor] : [authInterceptor])),
   ],
 };

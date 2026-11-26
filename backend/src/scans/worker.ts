@@ -3,6 +3,7 @@
 
 import type pg from 'pg';
 import { assess } from '../assess/assess.ts';
+import { config } from '../config.ts';
 import { classifyObservation } from '../classify/classify.ts';
 import { createRequestGuard } from '../scanner/requestGuard.ts';
 import { ScanError, scanSite, type Observation } from '../scanner/scanner.ts';
@@ -17,6 +18,7 @@ const defaultRunScan: RunScan = (scan) => scanSite({
   observationSeconds: scan.observationSeconds,
   viewport: scan.viewport,
   guard: createRequestGuard(),
+  egress: config.egressProxy ? {} : undefined,
 });
 
 /** Runs one claimed scan to COMPLETED or FAILED. Never throws. */

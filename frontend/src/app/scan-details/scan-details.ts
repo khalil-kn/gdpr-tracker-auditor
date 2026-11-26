@@ -27,6 +27,7 @@ export class ScanDetails {
   private readonly router = inject(Router);
   protected readonly store = inject(ReportStore);
   protected readonly error = signal<string | null>(null);
+  protected readonly pdfUrl = computed(() => this.api.pdfUrl(this.id()));
 
   protected readonly tabs = computed(() => {
     const r = this.store.report();

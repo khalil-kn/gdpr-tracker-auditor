@@ -1,0 +1,9 @@
+# HTTPS in front of the site. With a real domain pointing at this server, Caddy gets and renews a
+# Let's Encrypt certificate by itself. DOMAIN=localhost uses a local certificate for trying the stack.
+{$DOMAIN} {
+	encode zstd gzip
+	header Strict-Transport-Security "max-age=31536000"
+	reverse_proxy web:80 {
+		header_up X-Forwarded-Proto {scheme}
+	}
+}

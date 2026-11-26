@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import type pg from 'pg';
+import { currentUser, requireAuth } from '../auth/middleware.ts';
 import { config } from '../config.ts';
+import { pdfFileName, reportPdf } from '../report/pdf.ts';
 import { rateLimit } from '../security/rateLimit.ts';
 import { checkTargetUrl, type LookupFn } from '../security/urlGuard.ts';
 import { CONSENT_STATES, type ConsentState, type CreateScanRequest, type Viewport } from './model.ts';
@@ -35,27 +37,43 @@ export function parseCreateBody(body: unknown): CreateScanRequest | string {
 
 export function scansRouter(pool: pg.Pool, resolve?: LookupFn): Router {
   const router = Router();
+  router.use(requireAuth(pool)); // every scan route needs a signed-in user
 
   router.post('/', rateLimit(5, 60_000), async (req, res) => {
+    const user = currentUser(res);
     const parsed = parseCreateBody(req.body);
     if (typeof parsed === 'string') return res.status(400).json({ message: parsed });
 
     const target = await checkTargetUrl(parsed.url, resolve);
     if (!target.ok) return res.status(400).json({ message: target.reason });
 
-    if ((await countActive(pool)) >= config.maxQueuedScans) {
+    const active = await countActive(pool, user.id);
+    if (active.mine >= config.maxActiveScansPerUser) {
+      return res.status(429).json({ message: `You already have ${active.mine} scans waiting or running. Wait for one to finish.` });
+    }
+    if (active.all >= config.maxQueuedScans) {
       return res.status(429).json({ message: 'The scanner is busy. Try again in a few minutes.' });
     }
-    const scan = await createScan(pool, { ...parsed, url: target.url.href }, target.url.hostname);
+    const scan = await createScan(pool, user.id, { ...parsed, url: target.url.href }, target.url.hostname);
     res.status(202).location(`/api/scans/${scan.id}`).json(scan);
   });
 
   router.get('/', async (_req, res) => {
-    res.json(await listScans(pool));
+    res.json(await listScans(pool, currentUser(res).id));
+  });
+
+  // Each export starts a Chromium, so it gets its own small budget.
+  router.get('/:id/report.pdf', rateLimit(10, 60_000, 'Too many PDF exports in a short time. Wait a minute and try again.'), async (req, res) => {
+    const id = String(req.params.id);
+    const report = UUID.test(id) ? await getReport(pool, id, currentUser(res).id) : null;
+    if (!report) return res.status(404).json({ message: 'This scan does not exist.' });
+    if (report.status !== 'COMPLETED') return res.status(409).json({ message: 'The PDF is ready once the scan has finished.' });
+    const pdf = await reportPdf(report);
+    res.type('application/pdf').attachment(pdfFileName(report)).send(pdf);
   });
 
   router.get('/:id', async (req, res) => {
-    const report = UUID.test(req.params.id) ? await getReport(pool, req.params.id) : null;
+    const report = UUID.test(req.params.id) ? await getReport(pool, req.params.id, currentUser(res).id) : null;
     if (!report) return res.status(404).json({ message: 'This scan does not exist.' });
     res.json(report);
   });

@@ -20,3 +20,17 @@ html, body { margin: 0; min-height: 100%; background: var(--ground); }
 // Routed component hosts take no box, so their sections become flex items of .main and get its 24px gap.
 .ta .main > *, .ta app-scan-details > * { display: contents; }
 .ta .axis span { white-space: nowrap; }
+
+// Compare scans
+.ta .cmp-pick { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; padding-top: 20px; }
+.ta .cmp-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
+.ta .cmp-findings { display: flex; flex-direction: column; }
+.ta .cmp-findings li { display: grid; grid-template-columns: 88px minmax(0, 1fr) auto; gap: 16px; align-items: center; padding: 14px 24px; border-top: 1px solid var(--rule); }
+@media (max-width: 720px) {
+  .ta .cmp-pick, .ta .cmp-kpis { grid-template-columns: minmax(0, 1fr); }
+}
+
+// Tracker library
+.ta .lib-filters { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.ta .lib-filters .input { max-width: 320px; }
+.ta .lib-domains { display: flex; flex-wrap: wrap; gap: 6px; }

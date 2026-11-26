@@ -12,3 +12,5 @@
 @media (max-width: 640px) {
   .demo-tag { writing-mode: horizontal-tb; transform: none; white-space: nowrap; }
 }
+.rail-out { cursor: pointer; color: var(--muted); }
+.rail-out:hover { color: var(--text); background: var(--raised); }

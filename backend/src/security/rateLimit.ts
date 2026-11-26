@@ -5,7 +5,11 @@ import type { RequestHandler } from 'express';
  * shortcut: counts live in this process's memory; use a shared store (Postgres or Redis) once
  * more than one backend instance runs, or they each allow `max`.
  */
-export function rateLimit(max: number, windowMs: number): RequestHandler {
+export function rateLimit(
+  max: number,
+  windowMs: number,
+  message = 'Too many scans in a short time. Wait a minute and try again.',
+): RequestHandler {
   const hits = new Map<string, { count: number; resetAt: number }>();
   return (req, res, next) => {
     const now = Date.now();
@@ -18,7 +22,7 @@ export function rateLimit(max: number, windowMs: number): RequestHandler {
     }
     if (++entry.count > max) {
       res.setHeader('Retry-After', Math.ceil((entry.resetAt - now) / 1000));
-      return res.status(429).json({ message: 'Too many scans in a short time. Wait a minute and try again.' });
+      return res.status(429).json({ message });
     }
     next();
   };

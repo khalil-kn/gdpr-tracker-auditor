@@ -28,27 +28,33 @@ function toSummary(r: ScanRow): ScanSummary {
   };
 }
 
-export async function createScan(db: Db, input: CreateScanRequest, host: string): Promise<ScanSummary> {
+export async function createScan(db: Db, userId: string, input: CreateScanRequest, host: string): Promise<ScanSummary> {
   const { rows } = await db.query<ScanRow>(
-    `INSERT INTO scans (url, host, consent_states, observation_seconds, viewport)
-     VALUES ($1, $2, $3, $4, $5) RETURNING *, NULL::int AS finding_count`,
-    [input.url, host, input.consentStates, input.observationSeconds, input.viewport],
+    `INSERT INTO scans (user_id, url, host, consent_states, observation_seconds, viewport)
+     VALUES ($1, $2, $3, $4, $5, $6) RETURNING *, NULL::int AS finding_count`,
+    [userId, input.url, host, input.consentStates, input.observationSeconds, input.viewport],
   );
   return toSummary(rows[0]!);
 }
 
-export async function listScans(db: Db, limit = 200): Promise<ScanSummary[]> {
-  const { rows } = await db.query<ScanRow>(`SELECT ${SUMMARY_COLUMNS} FROM scans s ORDER BY s.created_at DESC LIMIT $1`, [limit]);
+/** One account's scans only. Every read of scans is scoped by user_id: ids alone never grant access (no IDOR). */
+export async function listScans(db: Db, userId: string, limit = 200): Promise<ScanSummary[]> {
+  const { rows } = await db.query<ScanRow>(
+    `SELECT ${SUMMARY_COLUMNS} FROM scans s WHERE s.user_id = $1 ORDER BY s.created_at DESC LIMIT $2`, [userId, limit]);
   return rows.map(toSummary);
 }
 
-export async function countActive(db: Db): Promise<number> {
-  const { rows } = await db.query<{ n: number }>(`SELECT count(*)::int AS n FROM scans WHERE status IN ('PENDING', 'RUNNING')`);
-  return rows[0]!.n;
+/** Scans waiting or running: in the whole queue, and for one account. */
+export async function countActive(db: Db, userId: string): Promise<{ all: number; mine: number }> {
+  const { rows } = await db.query<{ all: number; mine: number }>(
+    `SELECT count(*)::int AS "all", (count(*) FILTER (WHERE user_id = $1))::int AS mine
+     FROM scans WHERE status IN ('PENDING', 'RUNNING')`, [userId]);
+  return rows[0]!;
 }
 
-export async function getReport(db: Db, id: string): Promise<ScanReport | null> {
-  const { rows } = await db.query<ScanRow>(`SELECT ${SUMMARY_COLUMNS} FROM scans s WHERE s.id = $1`, [id]);
+/** Null when the scan doesn't exist OR belongs to someone else: the caller can't tell which. */
+export async function getReport(db: Db, id: string, userId: string): Promise<ScanReport | null> {
+  const { rows } = await db.query<ScanRow>(`SELECT ${SUMMARY_COLUMNS} FROM scans s WHERE s.id = $1 AND s.user_id = $2`, [id, userId]);
   const scan = rows[0];
   if (!scan) return null;
 

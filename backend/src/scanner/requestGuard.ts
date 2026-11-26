@@ -10,9 +10,9 @@ export type RequestGuard = (url: URL) => Promise<boolean>;
 /**
  * Allows http(s) requests whose hostname resolves only to public addresses. Results are cached per
  * hostname for the scan, so a page with 300 requests to 20 hosts costs 20 lookups.
- * shortcut: Chromium resolves the name again itself, so a DNS-rebinding server could answer "public"
- * to us and "private" to the browser. Upgrade by sending the browser through an egress proxy that
- * enforces isBlockedAddress on the connection it actually opens.
+ * This is the first check, made before the request leaves Chromium. A DNS-rebinding server could still
+ * answer "public" here and "private" later, so the egress proxy (egressProxy.ts) checks again on the
+ * connection it actually opens: the browser itself never resolves a name.
  */
 export function createRequestGuard(resolve: LookupFn = dnsLookup): RequestGuard {
   const cache = new Map<string, Promise<boolean>>();

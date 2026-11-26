@@ -11,7 +11,11 @@
     }
   </div>
   <div class="actions">
-    <a class="btn btn-secondary" routerLink="/scans/new">Scan again</a>
+    @if (r?.status === 'COMPLETED') {
+      <a class="btn btn-outline" [href]="pdfUrl()" download>Download PDF</a>
+      <a class="btn btn-outline" routerLink="/scans/compare" [queryParams]="{ b: id() }">Compare</a>
+    }
+    <a class="btn btn-secondary" routerLink="/scans/new" [queryParams]="r ? { url: r.url } : {}">Scan again</a>
   </div>
 </div>
 

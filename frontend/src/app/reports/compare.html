@@ -1,0 +1,112 @@
+<div class="title-row">
+  <div>
+    <nav class="crumbs" aria-label="Breadcrumb"><a routerLink="/scans">Scans</a><span aria-hidden="true">/</span><span>Compare</span></nav>
+    <h1 class="t-title">Compare two scans</h1>
+    <p class="subline">See what a site added or removed between two scans, for example before and after fixing its consent banner.</p>
+  </div>
+</div>
+
+@if (scans(); as list) {
+  @if (list.length < 2) {
+    <section class="panel"><div class="empty">
+      <h2 class="t-section">Two completed scans are needed</h2>
+      <p class="muted">Scan a site, change something, then scan it again to compare the two.</p>
+      <a class="btn btn-primary" routerLink="/scans/new">New scan</a>
+    </div></section>
+  } @else {
+    <section class="panel">
+      <div class="panel-b cmp-pick">
+        <div class="field">
+          <label for="cmp-a">Before</label>
+          <select id="cmp-a" class="select" [value]="beforeId() ?? ''" (change)="choose('a', $any($event.target).value)">
+            @if (!beforeId()) { <option value="" disabled>Choose a scan</option> }
+            @for (s of list; track s.id) { <option [value]="s.id">{{ s.host }}, {{ s.createdAt | date: 'd MMM y, HH:mm' }}</option> }
+          </select>
+        </div>
+        <div class="field">
+          <label for="cmp-b">After</label>
+          <select id="cmp-b" class="select" [value]="afterId() ?? ''" (change)="choose('b', $any($event.target).value)">
+            @for (s of list; track s.id) { <option [value]="s.id">{{ s.host }}, {{ s.createdAt | date: 'd MMM y, HH:mm' }}</option> }
+          </select>
+        </div>
+      </div>
+    </section>
+
+    @if (error(); as err) {
+      <div class="notice notice-error" role="alert"><span><span class="t-strong">Can't load these scans.</span> {{ err }}</span></div>
+    } @else if (!beforeId()) {
+      <div class="notice"><span>This site has no earlier completed scan. Choose one under Before.</span></div>
+    } @else if (cmp(); as c) {
+      @let r = reports()!;
+      @if (r.before.host !== r.after.host) {
+        <div class="notice notice-warn"><span>These scans are of two different sites, {{ r.before.host }} and {{ r.after.host }}.</span></div>
+      }
+      @if (r.before.createdAt > r.after.createdAt) {
+        <div class="notice notice-warn"><span>Before is the newer scan. Swap them to read the changes forward in time.</span></div>
+      }
+
+      <div class="kgrid cmp-kpis" role="group" aria-label="Summary of changes">
+        <div class="kpi">
+          <span class="t-label">Exposure</span>
+          <span class="t-kpi">
+            @if (c.scoreBefore !== null) { <span class="{{ band(c.scoreBefore).cls }}">{{ c.scoreBefore }}</span> } @else { — }
+            <span class="muted" aria-label="to"> → </span>
+            @if (c.scoreAfter !== null) { <span class="{{ band(c.scoreAfter).cls }}">{{ c.scoreAfter }}</span> } @else { — }
+          </span>
+          <span class="small muted">{{ delta(c.scoreDelta) }}</span>
+        </div>
+        <div class="kpi">
+          <span class="t-label">Third-party domains</span>
+          <span class="t-kpi">{{ c.thirdPartyBefore }} <span class="muted" aria-label="to">→</span> {{ c.thirdPartyAfter }}</span>
+          <span class="small muted">in the busiest consent state</span>
+        </div>
+        <div class="kpi">
+          <span class="t-label">Findings</span>
+          <span class="t-kpi">{{ r.before.findings.length }} <span class="muted" aria-label="to">→</span> {{ r.after.findings.length }}</span>
+          <span class="small muted">to review</span>
+        </div>
+      </div>
+
+      <section class="panel" aria-labelledby="cmp-s-h">
+        <div class="panel-h"><h2 id="cmp-s-h" class="t-section">Services</h2></div>
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead><tr><th scope="col">Service</th><th scope="col">Category</th><th scope="col">Before</th><th scope="col">After</th><th scope="col">Change</th></tr></thead>
+            <tbody>
+              @for (s of c.services; track s.key) {
+                <tr>
+                  <td><span [attr.data-cat]="s.category">{{ s.name }}</span></td>
+                  <td>{{ s.category === 'Unknown' ? 'Unclassified' : s.category }}</td>
+                  <td>@if (s.before) { <span class="pill {{ assessmentPill[s.before] }}">{{ s.before }}</span> } @else { <span class="dash">Not seen</span> }</td>
+                  <td>@if (s.after) { <span class="pill {{ assessmentPill[s.after] }}">{{ s.after }}</span> } @else { <span class="dash">Not seen</span> }</td>
+                  <td><span class="pill {{ changeLabel[s.change].cls }}">{{ changeLabel[s.change].label }}</span></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="cmp-f-h">
+        <div class="panel-h"><h2 id="cmp-f-h" class="t-section">Findings</h2></div>
+        @if (c.findings.length) {
+          <ul class="cmp-findings">
+            @for (f of c.findings; track f.title) {
+              <li>
+                <span class="pill {{ severityPill[f.severity].cls }}">{{ severityPill[f.severity].label }}</span>
+                <span class="t-strong">{{ f.title }}</span>
+                <span class="pill {{ changeLabel[f.change].cls }}">{{ f.change === 'gone' ? 'Resolved' : changeLabel[f.change].label }}</span>
+              </li>
+            }
+          </ul>
+        } @else {
+          <div class="empty"><p class="muted">Neither scan has findings.</p></div>
+        }
+      </section>
+    } @else {
+      <section class="panel" aria-busy="true"><div class="panel-b" style="padding-top: 24px"><span class="sk" style="height: 240px"></span></div></section>
+    }
+  }
+} @else {
+  <section class="panel" aria-busy="true"><div class="panel-b" style="padding-top: 24px"><span class="sk" style="height: 120px"></span></div></section>
+}

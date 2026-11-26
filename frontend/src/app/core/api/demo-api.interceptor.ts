@@ -19,8 +19,15 @@ function current(s: ScanSummary): ScanReport {
 }
 
 export const demoApiInterceptor: HttpInterceptorFn = (req, next) => {
-  if (!req.url.startsWith('/api/scans')) return next(req);
   const ok = <T>(body: T, status = 200) => of(new HttpResponse({ status, body })).pipe(delay(250));
+  // Signed in as a demo user; sign-out is accepted and forgotten.
+  if (req.url === '/api/auth/me' || req.url === '/api/auth/login' || req.url === '/api/auth/register') {
+    return ok({ id: 'demo-user', email: 'demo@example.com' });
+  }
+  if (req.url === '/api/auth/logout') return ok(null, 204);
+  if (req.url === '/api/auth/config') return ok({ registration: true, passwordMin: 10 });
+  if (req.url === '/api/trackers') return ok(demoReport('lib', 'demo.example', new Date().toISOString()).trackers.map((t) => ({ ...t, cookiePatterns: [] })));
+  if (!req.url.startsWith('/api/scans')) return next(req);
 
   if (req.method === 'GET' && req.url === '/api/scans') {
     return ok(scans.map((s) => { const { requests, cookies, trackers, findings, privacyScore, states, ...sum } = current(s); return sum; }));

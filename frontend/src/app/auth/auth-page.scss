@@ -1,0 +1,7 @@
+.auth { min-height: calc(100vh - 96px); display: grid; place-items: center; padding: 24px 0; }
+.auth-card { width: min(440px, 100%); }
+.auth-body { display: flex; flex-direction: column; gap: 16px; padding: 32px; }
+.auth-mark { margin-bottom: 4px; }
+.auth-form { display: flex; flex-direction: column; gap: 18px; margin-top: 8px; }
+.auth-form .btn { width: 100%; justify-content: center; }
+.auth-switch { margin-top: 4px; }

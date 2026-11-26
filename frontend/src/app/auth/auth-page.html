@@ -1,0 +1,46 @@
+<div class="auth">
+  <section class="panel auth-card" aria-labelledby="auth-h">
+    <div class="panel-b auth-body">
+      <div class="auth-mark" aria-hidden="true">
+        <svg width="36" height="36" viewBox="0 0 28 28" fill="none"><rect x="3" y="11" width="3" height="10" rx="1.5" fill="#38c6f4"/><rect x="7.5" y="5" width="3" height="18" rx="1.5" fill="#ff5fa2"/><rect x="12" y="8" width="3" height="14" rx="1.5" fill="#ff9a3d"/><rect x="16.5" y="3" width="3" height="22" rx="1.5" fill="#ffd43b"/><rect x="21" y="9" width="3" height="12" rx="1.5" fill="#5ad19a"/></svg>
+      </div>
+      <h1 id="auth-h" class="t-title">{{ isRegister() ? 'Create your account' : 'Sign in to Tracker Auditor' }}</h1>
+      <p class="muted">{{ isRegister() ? 'Your scans and reports are visible only to you.' : 'Your scans and reports are waiting.' }}</p>
+
+      @if (error(); as err) {
+        <div class="notice notice-error" role="alert"><span>{{ err }}</span></div>
+      }
+
+      <form (ngSubmit)="submit()" class="auth-form">
+        <div class="field">
+          <label for="auth-email">Email</label>
+          <input id="auth-email" name="email" class="input" type="email" autocomplete="email" required
+                 [ngModel]="email()" (ngModelChange)="email.set($event)">
+        </div>
+        <div class="field">
+          <label for="auth-pw">Password</label>
+          <input id="auth-pw" name="password" class="input" type="password" required
+                 [attr.autocomplete]="isRegister() ? 'new-password' : 'current-password'"
+                 [class.is-error]="tooShort()" [attr.aria-invalid]="tooShort()" aria-describedby="auth-pw-hint"
+                 [ngModel]="password()" (ngModelChange)="password.set($event)">
+          @if (isRegister()) {
+            <span id="auth-pw-hint" [class]="tooShort() ? 'error-text' : 'hint'">At least {{ min() }} characters. A long phrase is easier to remember and harder to guess.</span>
+          }
+        </div>
+        <button class="btn btn-primary btn-lg" type="submit" [disabled]="!canSubmit()">
+          {{ busy() ? (isRegister() ? 'Creating account…' : 'Signing in…') : (isRegister() ? 'Create account' : 'Sign in') }}
+        </button>
+      </form>
+
+      <p class="small muted auth-switch">
+        @if (isRegister()) {
+          Already have an account? <a class="link" routerLink="/login" [queryParams]="{ next: next() }">Sign in</a>
+        } @else if (config()?.registration) {
+          New here? <a class="link" routerLink="/register" [queryParams]="{ next: next() }">Create an account</a>
+        } @else if (config()) {
+          New accounts are closed on this server.
+        }
+      </p>
+    </div>
+  </section>
+</div>

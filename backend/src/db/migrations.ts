@@ -71,4 +71,29 @@ export const MIGRATIONS: { name: string; sql: string }[] = [
       CREATE INDEX findings_scan_idx ON findings (scan_id);
     `,
   },
+  {
+    name: '002_auth',
+    sql: `
+      CREATE TABLE users (
+        id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        email         text NOT NULL UNIQUE CHECK (email = lower(email)),
+        password_hash text NOT NULL,
+        created_at    timestamptz NOT NULL DEFAULT now()
+      );
+
+      -- Only a SHA-256 of the session token is stored: a leaked table can't be replayed as cookies.
+      CREATE TABLE sessions (
+        token_hash text PRIMARY KEY,
+        user_id    uuid NOT NULL REFERENCES users ON DELETE CASCADE,
+        created_at timestamptz NOT NULL DEFAULT now(),
+        expires_at timestamptz NOT NULL
+      );
+      CREATE INDEX sessions_user_idx ON sessions (user_id);
+
+      -- Every scan belongs to one account. Scans made before accounts existed have no owner until
+      -- the first account is created, which adopts them (see auth/repository.ts).
+      ALTER TABLE scans ADD COLUMN user_id uuid REFERENCES users ON DELETE CASCADE;
+      CREATE INDEX scans_user_idx ON scans (user_id, created_at DESC);
+    `,
+  },
 ];

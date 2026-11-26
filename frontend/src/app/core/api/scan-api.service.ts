@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, switchMap, takeWhile, timer } from 'rxjs';
-import { CreateScanRequest, ScanReport, ScanSummary } from '../models/scan.models';
+import { CreateScanRequest, LibraryTracker, ScanReport, ScanSummary } from '../models/scan.models';
 
 @Injectable({ providedIn: 'root' })
 export class ScanApi {
@@ -18,6 +18,15 @@ export class ScanApi {
 
   get(id: string): Observable<ScanReport> {
     return this.http.get<ScanReport>(`/api/scans/${encodeURIComponent(id)}`);
+  }
+
+  /** Address of the PDF version of a report. The browser downloads it with the session cookie. */
+  pdfUrl(id: string): string {
+    return `/api/scans/${encodeURIComponent(id)}/report.pdf`;
+  }
+
+  trackers(): Observable<LibraryTracker[]> {
+    return this.http.get<LibraryTracker[]>('/api/trackers');
   }
 
   /** Polls until the scan is COMPLETED or FAILED, emitting every state including the last one. */

@@ -1,0 +1,52 @@
+<div class="title-row">
+  <div>
+    <h1 class="t-title">Tracker library</h1>
+    <p class="subline">
+      The services the scanner recognises. A request matches when its hostname is one of these domains or a subdomain of one.
+      Only Analytics, Advertising and Social count as tracking.
+    </p>
+  </div>
+</div>
+
+@if (error(); as err) {
+  <div class="notice notice-error" role="alert"><span><span class="t-strong">Can't load the library.</span> {{ err }}</span></div>
+} @else if (all(); as list) {
+  <div class="lib-filters">
+    <label class="sr" for="lib-q">Search services and domains</label>
+    <input id="lib-q" class="input" type="search" placeholder="Search a name or a domain" [value]="query()" (input)="query.set($any($event.target).value)">
+    <div class="tabs" role="group" aria-label="Category" style="margin: 0">
+      <button class="tab" type="button" [attr.aria-current]="category() === 'All' ? 'page' : null" (click)="category.set('All')">All <span class="count">{{ list.length }}</span></button>
+      @for (c of categories; track c) {
+        <button class="tab" type="button" [attr.aria-current]="category() === c ? 'page' : null" (click)="category.set(c)">
+          <span [attr.data-cat]="c">{{ c }}</span> <span class="count">{{ counts()[c] }}</span>
+        </button>
+      }
+    </div>
+  </div>
+
+  <section class="panel" aria-labelledby="lib-h">
+    <div class="panel-h"><h2 id="lib-h" class="t-section">{{ rows().length }} {{ rows().length === 1 ? 'service' : 'services' }}</h2></div>
+    @if (rows().length) {
+      <div class="tbl-wrap">
+        <table class="tbl">
+          <thead><tr><th scope="col">Service</th><th scope="col">Category</th><th scope="col">What it does</th><th scope="col">Domains</th><th scope="col" class="hide-sm">Cookie names</th></tr></thead>
+          <tbody>
+            @for (t of rows(); track t.id) {
+              <tr>
+                <td><span class="t-strong" [attr.data-cat]="t.category">{{ t.name }}</span><span class="sub">{{ t.provider }}</span></td>
+                <td>{{ t.category }}@if (tracking.has(t.category)) { <span class="sub">Counts as tracking</span> }</td>
+                <td style="max-width: 40ch">{{ t.description }}</td>
+                <td><span class="lib-domains">@for (d of t.domains; track d) { <span class="mono small">{{ d }}</span> }</span></td>
+                <td class="hide-sm">@if (t.cookiePatterns.length) { @for (p of t.cookiePatterns; track p) { <span class="mono small">{{ p }}</span> } } @else { <span class="dash">—</span> }</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <div class="empty"><p class="t-strong">No service matches “{{ query() }}”.</p><p class="muted">A domain that isn't here shows as Unclassified in reports.</p></div>
+    }
+  </section>
+} @else {
+  <section class="panel" aria-busy="true"><div class="panel-b" style="padding-top: 24px"><span class="sk" style="height: 240px"></span></div></section>
+}

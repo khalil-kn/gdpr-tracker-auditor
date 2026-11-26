@@ -3,18 +3,28 @@
     <a class="rail-mark" routerLink="/" aria-label="Tracker Auditor, overview" title="Tracker Auditor">
       <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true"><rect x="3" y="11" width="3" height="10" rx="1.5" fill="#38c6f4"/><rect x="7.5" y="5" width="3" height="18" rx="1.5" fill="#ff5fa2"/><rect x="12" y="8" width="3" height="14" rx="1.5" fill="#ff9a3d"/><rect x="16.5" y="3" width="3" height="22" rx="1.5" fill="#ffd43b"/><rect x="21" y="9" width="3" height="12" rx="1.5" fill="#5ad19a"/></svg>
     </a>
-    <a class="rail-new" routerLink="/scans/new" routerLinkActive #rn="routerLinkActive" [attr.aria-current]="rn.isActive ? 'page' : null" aria-label="New scan" title="New scan">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-    </a>
-    <a routerLink="/" routerLinkActive [routerLinkActiveOptions]="{ exact: true }" #ro="routerLinkActive" [attr.aria-current]="ro.isActive ? 'page' : null" aria-label="Overview" title="Overview">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3h7v7H3zM14 3h7v4h-7zM14 11h7v10h-7zM3 14h7v7H3z"/></svg>
-    </a>
-    <a routerLink="/scans" routerLinkActive #rs="routerLinkActive" [attr.aria-current]="rs.isActive && !rn.isActive ? 'page' : null" aria-label="Scans" title="Scans">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
-    </a>
+    @if (auth.user()) {
+      <a class="rail-new" routerLink="/scans/new" routerLinkActive #rn="routerLinkActive" [attr.aria-current]="rn.isActive ? 'page' : null" aria-label="New scan" title="New scan">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      </a>
+      <a routerLink="/" routerLinkActive [routerLinkActiveOptions]="{ exact: true }" #ro="routerLinkActive" [attr.aria-current]="ro.isActive ? 'page' : null" aria-label="Overview" title="Overview">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3h7v7H3zM14 3h7v4h-7zM14 11h7v10h-7zM3 14h7v7H3z"/></svg>
+      </a>
+      <a routerLink="/scans" routerLinkActive #rs="routerLinkActive" [attr.aria-current]="rs.isActive && !rn.isActive ? 'page' : null" aria-label="Scans" title="Scans">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+      </a>
+      <a routerLink="/library" routerLinkActive #rl="routerLinkActive" [attr.aria-current]="rl.isActive ? 'page' : null" aria-label="Tracker library" title="Tracker library">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h4v14H4zM10 5h4v14h-4zM16.5 5.5l3.8-1 3.2 13.6-3.8 1z"/></svg>
+      </a>
+    }
+    @if (demo || auth.user()) { <span class="rail-push" aria-hidden="true"></span> }
     @if (demo) {
-      <span class="rail-push" aria-hidden="true"></span>
       <span class="demo-tag" title="The backend is not connected. Pages show sample data.">Demo data</span>
+    }
+    @if (auth.user(); as u) {
+      <button class="rail-btn rail-out" type="button" (click)="signOut()" [attr.aria-label]="'Sign out ' + u.email" [title]="'Sign out ' + u.email">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 16l-4-4 4-4M6 12h10"/></svg>
+      </button>
     }
   </nav>
   <main class="main" id="main">

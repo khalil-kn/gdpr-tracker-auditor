@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { apiErrorMessage } from '../../core/api/api-error';
@@ -13,7 +13,10 @@ type Mark = 'ok' | 'bad' | 'wait';
   imports: [FormsModule, RouterLink],
   templateUrl: './new-scan.html',
 })
-export class NewScan {
+export class NewScan implements OnInit {
+  /** ?url= from "Scan again": the address to start with. */
+  readonly prefill = input<string | undefined>(undefined, { alias: 'url' });
+
   private readonly api = inject(ScanApi);
   private readonly router = inject(Router);
 
@@ -49,6 +52,11 @@ export class NewScan {
     { id: 'desktop', label: 'Desktop, 1366 × 768' },
     { id: 'phone', label: 'Phone, 390 × 844' },
   ];
+
+  ngOnInit(): void {
+    const u = this.prefill();
+    if (u) this.url.set(u);
+  }
 
   protected start(): void {
     const c = this.check();

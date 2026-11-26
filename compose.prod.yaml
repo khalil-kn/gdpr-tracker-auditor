@@ -1,0 +1,61 @@
+# Production stack: PostgreSQL, the API + worker, the Angular site, and Caddy for HTTPS.
+#   cp .env.example .env    # set POSTGRES_PASSWORD and DOMAIN
+#   docker compose -f compose.prod.yaml up -d --build
+# Only Caddy publishes ports; the database and the API are reachable only inside this network.
+
+services:
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      retries: 10
+
+  api:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      NODE_ENV: production
+      TRUST_PROXY: 2 # Caddy, then nginx
+      ALLOW_REGISTRATION: ${ALLOW_REGISTRATION:-true}
+      SCAN_CONCURRENCY: ${SCAN_CONCURRENCY:-2}
+    init: true # reaps Chromium child processes
+    shm_size: 1gb # Chromium needs more shared memory than Docker's 64 MB default
+
+  web:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      - api
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on:
+      - web
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+
+volumes:
+  pgdata:
+  caddy_data:
