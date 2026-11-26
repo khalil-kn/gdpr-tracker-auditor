@@ -1,0 +1,62 @@
+@let r = report();
+<section class="panel" aria-labelledby="strip-h">
+  <div class="panel-h">
+    <div>
+      <h2 id="strip-h" class="t-section">Consent seismograph</h2>
+      <p class="small muted">The first {{ r.observationSeconds }} seconds of each state, each in a fresh browser. The dashed line is the scanner clicking the banner.</p>
+    </div>
+    <div style="display: flex; align-items: center; gap: 18px; flex-wrap: wrap">
+      <span class="key"><i style="width: 4px; height: 14px; background: var(--an)"></i>Analytics</span>
+      <span class="key"><i style="width: 4px; height: 14px; background: var(--ad)"></i>Advertising</span>
+      <span class="key"><i style="width: 4px; height: 14px; background: var(--so)"></i>Social</span>
+      <span class="key"><i style="width: 4px; height: 12px; background: var(--uk)"></i>Unclassified</span>
+      @if (showOther()) { <span class="key"><i style="width: 2px; height: 10px; background: var(--other)"></i>Other</span> }
+      <div class="seg" role="group" aria-label="Requests shown">
+        <button type="button" [attr.aria-pressed]="!showOther()" (click)="showOther.set(false)">Tracking only</button>
+        <button type="button" [attr.aria-pressed]="showOther()" (click)="showOther.set(true)">All third-party</button>
+      </div>
+    </div>
+  </div>
+  <div class="panel-b" style="padding-top: 20px">
+    <div class="strip">
+      @for (l of lanes(); track l.state) {
+        @let run = runs().get(l.state);
+        <div class="lane" style="min-height: 92px">
+          <span style="display: flex; flex-direction: column; gap: 4px">
+            <span class="t-strong">{{ stateLabel[l.state] }}</span>
+            <span class="small muted">
+              @if (l.state === 'BEFORE_INTERACTION') { Banner never answered }
+              @else if (run && !run.bannerFound) { Banner not found }
+              @else if (l.choiceX !== null) { {{ l.state === 'REJECTED' ? 'Reject all' : 'Accept all' }} at {{ (run!.bannerClickedAtMs! / 1000).toFixed(1) }} s }
+            </span>
+            @if (l.withoutConsent) { <span class="lane-issue">Tracking without consent</span> }
+          </span>
+          <div class="track" style="height: 52px" role="img"
+               [attr.aria-label]="l.tracking + ' tracking requests of ' + l.thirdParty + ' third-party requests'">
+            @if (l.choiceX !== null) {
+              <span class="choice" [style.left.%]="l.choiceX"></span>
+              <span class="choice-l" [style.left.%]="l.choiceX">{{ l.state === 'REJECTED' ? 'Reject all' : 'Accept all' }}</span>
+            }
+            @for (t of l.ticks; track $index) {
+              @if (t.cls) {
+                <span class="tk {{ t.cls }}" [style.left.%]="t.x" [style.top.px]="t.cls === 'unk' ? 12 : 2" [style.height.px]="t.cls === 'unk' ? 28 : 48"></span>
+              } @else if (showOther()) {
+                <span class="tk" [style.left.%]="t.x" style="top: 20px"></span>
+              }
+            }
+          </div>
+          <span class="num">
+            <span class="fig" [class.c-bad]="l.withoutConsent" style="font-size: 40px; line-height: 40px">{{ l.tracking }}</span>
+            <span class="small muted" style="display: block">of {{ l.thirdParty }} third-party</span>
+          </span>
+        </div>
+      }
+      <div class="lane" style="min-height: 24px; border-top: 0">
+        <span></span>
+        <div class="axis" aria-hidden="true">@for (a of axis(); track a.x) { <span [style.left.%]="a.x">{{ a.label }}</span> }</div>
+        <span></span>
+      </div>
+    </div>
+  </div>
+  <div class="panel-f"><span class="small muted">A request is a technical observation. Whether it needed consent depends on context the browser can't see; review the findings before drawing conclusions.</span></div>
+</section>

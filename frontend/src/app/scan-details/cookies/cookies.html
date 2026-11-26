@@ -1,0 +1,59 @@
+<section class="panel" aria-labelledby="ck-h">
+  <div class="panel-h">
+    <div><h2 id="ck-h" class="t-section">Cookies</h2><p class="small muted">{{ rows().length }} of {{ all().length }} cookies, as set across the consent states</p></div>
+    <div class="seg" role="group" aria-label="Filter cookies">
+      @for (f of filters(); track f.id) {
+        <button type="button" [attr.aria-pressed]="filter() === f.id" (click)="filter.set(f.id)">{{ f.label }} <span class="muted" style="font-weight: 400">{{ f.count }}</span></button>
+      }
+    </div>
+  </div>
+  @if (rows().length) {
+    <div class="tbl-wrap">
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th scope="col">Name</th><th scope="col" class="hide-sm">Category</th><th scope="col" class="num">Kept for</th>
+            <th scope="col">Secure</th><th scope="col">HttpOnly</th><th scope="col">SameSite</th>
+            @for (st of states(); track st) { <th scope="col" class="num">{{ stateShort[st] }}</th> }
+          </tr>
+        </thead>
+        <tbody>
+          @for (c of rows(); track c.name + c.domain) {
+            <tr>
+              <td><span class="mono t-strong">{{ c.name }}</span><span class="sub">{{ c.domain }}, {{ c.thirdParty ? 'third party' : 'first party' }}</span></td>
+              <td class="hide-sm"><span [attr.data-cat]="c.category">{{ c.category }}</span></td>
+              <td class="num">{{ lifetime(c) }}</td>
+              <td [class.weak]="c.missingSecure">{{ c.secure ? 'Yes' : c.missingSecure ? 'Missing' : 'No' }}</td>
+              <td>{{ c.httpOnly ? 'Yes' : 'No' }}</td>
+              <td [class.weak]="c.missingSameSite">{{ c.sameSite ?? (c.missingSameSite ? 'Missing' : 'Not set') }}</td>
+              @for (st of states(); track st) {
+                <td class="num">
+                  @if (c.setIn[st]) {
+                    <span class="set" [class.trk]="c.tracking && st === 'ACCEPTED'" [class.issue]="c.tracking && st !== 'ACCEPTED'"
+                          role="img" [attr.aria-label]="c.tracking && st !== 'ACCEPTED' ? 'tracking cookie set without consent' : 'set'"></span>
+                  } @else { <span class="dash" aria-label="not set">—</span> }
+                </td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else {
+    <div class="empty"><p class="t-strong">No cookies in this group.</p></div>
+  }
+  <div class="panel-f" style="flex-wrap: wrap; justify-content: flex-start; gap: 16px">
+    <span class="key"><i class="set"></i>Set, not tracking</span>
+    <span class="key"><i class="set trk"></i>Tracking cookie set</span>
+    <span class="key"><i class="set issue"></i>Tracking cookie set without consent</span>
+    <span class="key"><span class="weak">Missing</span>&nbsp;security attribute on a cookie the site needs</span>
+  </div>
+</section>
+
+<section class="panel" aria-labelledby="rule-h">
+  <div class="panel-h"><h2 id="rule-h" class="t-section">What is checked</h2></div>
+  <div class="panel-b" style="display: flex; flex-direction: column; gap: 10px; max-width: 80ch">
+    <p>Security attributes are checked on cookies the site needs to work: sessions, carts and the consent record. Without <span class="mono">Secure</span> the browser would also send the cookie over plain http; without <span class="mono">SameSite</span> it relies on the browser default; without <span class="mono">HttpOnly</span> page scripts can read it.</p>
+    <p class="muted">Tracking cookies are reported by when they were set and how long they are kept, because their attributes are chosen by the vendor. Cookie values are never stored.</p>
+  </div>
+</section>

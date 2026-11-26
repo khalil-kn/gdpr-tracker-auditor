@@ -1,0 +1,102 @@
+@let r = report();
+@let score = r.privacyScore;
+<section class="panel" [class.panel-risk]="(score?.value ?? 0) >= 50" aria-labelledby="exp-h">
+  <div class="hero">
+    @if (score) {
+      <div class="ringwrap" role="img" [attr.aria-label]="'Exposure ' + score.value + ' of 100'">
+        <svg viewBox="0 0 200 200" aria-hidden="true">
+          <circle cx="100" cy="100" r="80" fill="none" stroke="#2a2a34" stroke-width="18"/>
+          @for (a of arcs(); track $index) {
+            <circle cx="100" cy="100" r="80" fill="none" [attr.stroke]="band().color" stroke-width="18"
+                    [attr.stroke-dasharray]="a.dash" [attr.stroke-dashoffset]="a.offset"/>
+          }
+        </svg>
+        <div class="ringnum"><b>{{ score.value }}</b><span class="small muted">of 100</span></div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 14px">
+        <h2 id="exp-h" class="small muted" style="font-weight: 500">Privacy Exposure Score</h2>
+        <p class="t-title {{ band().cls }}">{{ band().label }} exposure</p>
+        <p class="small muted">Higher means more exposed. Bands: 0–24 low, 25–49 moderate, 50–74 high, 75–100 severe. The score describes what the browser saw, not legal compliance.</p>
+      </div>
+      <ol class="ledger" [attr.aria-label]="'Where the ' + score.value + ' points come from'">
+        @for (b of score.breakdown; track $index) {
+          <li>
+            <span class="sw" [style.background]="band().color"></span>
+            <span class="pts {{ band().cls }}">+{{ b.points }}</span>
+            <span>{{ b.reason }} <span class="small muted" style="display: block">{{ b.detail }}</span></span>
+          </li>
+        }
+      </ol>
+    } @else {
+      <div class="empty"><h2 id="exp-h" class="t-section">No score for this scan</h2><p class="muted">The score is calculated once every consent state has finished.</p></div>
+    }
+  </div>
+</section>
+
+<section class="panel" aria-labelledby="spec-h">
+  <div class="panel-h">
+    <div>
+      <h2 id="spec-h" class="t-section">Third-party requests {{ stateLabel[mixState()].toLowerCase() }}, by category</h2>
+      <p class="small muted">{{ mixTotal() }} requests.</p>
+    </div>
+    <a class="link small" routerLink="trackers">Open the trackers</a>
+  </div>
+  <div class="panel-b" style="display: flex; flex-direction: column; gap: 14px">
+    @if (mixTotal() > 0) {
+      <div class="spec-bar" role="img" [attr.aria-label]="'Requests by category'">
+        @for (m of mix(); track m.category) {
+          <i [attr.data-c]="m.category" [style.flex]="m.count">{{ m.count }}</i>
+        }
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px 22px">
+        @for (m of mix(); track m.category) {
+          <span class="small" [attr.data-cat]="m.category">{{ m.category === 'Unknown' ? 'Unclassified' : m.category }}: {{ m.names.join(', ') }}</span>
+        }
+      </div>
+    } @else {
+      <p class="muted">No third-party requests were seen.</p>
+    }
+  </div>
+</section>
+
+<div class="g12">
+  <section class="panel s8" aria-labelledby="fi-h">
+    <div class="panel-h"><h2 id="fi-h" class="t-section">Findings</h2><a class="btn btn-sm btn-primary" routerLink="findings">Review {{ r.findings.length }} findings</a></div>
+    @if (topFindings().length) {
+      <table class="tbl">
+        <thead><tr><th scope="col">Severity</th><th scope="col">What was observed</th><th scope="col" class="hide-sm">Evidence</th></tr></thead>
+        <tbody>
+          @for (f of topFindings(); track f.id) {
+            <tr>
+              <td><span class="pill {{ severity[f.severity].cls }}">{{ severity[f.severity].label }}</span></td>
+              <td class="t-strong">{{ f.title }}</td>
+              <td class="hide-sm muted">{{ f.evidence[0] }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    } @else {
+      <div class="empty"><p class="t-strong">No findings.</p><p class="muted">Nothing in this scan matched a finding rule. That is an honest zero, not a pass.</p></div>
+    }
+  </section>
+
+  <section class="panel s4" aria-labelledby="st-h">
+    <div class="panel-h"><h2 id="st-h" class="t-section">By consent state</h2></div>
+    <table class="tbl">
+      <thead><tr><th scope="col">State</th><th scope="col" class="num">Requests</th><th scope="col" class="num">Trackers</th><th scope="col" class="num">Cookies</th></tr></thead>
+      <tbody>
+        @for (t of totals(); track t.state) {
+          <tr>
+            <td class="t-strong">{{ stateShort[t.state] }}</td>
+            <td class="num">{{ t.requests }}</td>
+            <td class="num">
+              @if (t.trackers > 0) { <span class="cell-hit" [class.issue]="t.state !== 'ACCEPTED'">{{ t.trackers }}</span> } @else { <span class="dash" aria-label="none">—</span> }
+            </td>
+            <td class="num">{{ t.cookies }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+    <div class="panel-f"><span class="small muted">Third-party domains: {{ domainTrend() }}.</span></div>
+  </section>
+</div>

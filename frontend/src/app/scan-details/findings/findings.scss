@@ -1,0 +1,4 @@
+.frow { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 12px; align-items: center; width: 100%; min-height: 64px; padding: 10px 24px; border: 0; border-top: 1px solid var(--rule); background: none; text-align: left; cursor: pointer; }
+.frow:hover { background: var(--ground); }
+.frow[aria-current='true'] { background: var(--active); }
+.ev { padding: 8px 0; border-top: 1px solid var(--rule); overflow-wrap: anywhere; }

@@ -1,0 +1,55 @@
+<div class="title-row">
+  <div>
+    <h1 class="t-title">Scans</h1>
+    <p class="subline">Every scan, newest first. Open one to read its report.</p>
+  </div>
+  <div class="actions"><a class="btn btn-primary" routerLink="/scans/new">New scan</a></div>
+</div>
+
+@if (error(); as err) {
+  <div class="notice notice-error" role="alert"><span><span class="t-strong">Can't load the scans.</span> {{ err }}</span></div>
+} @else if (scans() === null) {
+  <section class="panel" aria-busy="true"><div class="panel-b" style="padding-top: 24px"><span class="sk" style="height: 240px"></span></div></section>
+} @else if (scans()!.length === 0) {
+  <section class="panel">
+    <div class="empty">
+      <h2 class="t-section">No scans yet</h2>
+      <p class="muted">Start with a site you own or are allowed to test. The scanner visits it in an isolated browser.</p>
+      <a class="btn btn-primary" routerLink="/scans/new">Start your first scan</a>
+    </div>
+  </section>
+} @else {
+  <div class="tabs" role="group" aria-label="Scan status">
+    @for (t of tabs(); track t.id) {
+      <button class="tab" type="button" [attr.aria-current]="tab() === t.id ? 'page' : null" (click)="tab.set(t.id)">{{ t.label }} <span class="count">{{ t.count }}</span></button>
+    }
+  </div>
+  <section class="panel" aria-labelledby="hs-h">
+    <div class="panel-h"><h2 id="hs-h" class="t-section">{{ rows().length }} {{ rows().length === 1 ? 'scan' : 'scans' }}</h2></div>
+    @if (rows().length) {
+      <div class="tbl-wrap">
+        <table class="tbl">
+          <thead><tr><th scope="col">Site</th><th scope="col" class="hide-sm">Scan</th><th scope="col" class="num">Started</th><th scope="col" class="num hide-sm">Took</th><th scope="col" class="num">Exposure</th><th scope="col" class="num">Findings</th><th scope="col">Status</th></tr></thead>
+          <tbody>
+            @for (s of rows(); track s.id) {
+              <tr>
+                <td>
+                  <a class="row-link" [routerLink]="link(s)">{{ s.host }}</a>
+                  @if (s.failureReason) { <span class="sub">{{ s.failureReason }}</span> }
+                </td>
+                <td class="hide-sm"><span class="mono">{{ s.id }}</span></td>
+                <td class="num">{{ s.createdAt | date: 'd MMM' }}<span class="sub">{{ s.createdAt | date: 'HH:mm' }}</span></td>
+                <td class="num hide-sm">{{ took(s) }}</td>
+                <td class="num">@if (s.score !== null) { <span class="fig {{ band(s.score).cls }}" style="font-size: 17px">{{ s.score }}</span> } @else { <span class="dash">—</span> }</td>
+                <td class="num">{{ s.findingCount ?? '—' }}</td>
+                <td><span class="pill {{ statusPill[s.status].cls }}">{{ statusPill[s.status].label }}</span></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <div class="empty"><p class="t-strong">No scans with this status.</p></div>
+    }
+  </section>
+}

@@ -1,0 +1,13 @@
+.hero { display: grid; grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr); gap: 40px; align-items: center; padding: 32px; }
+.ringwrap { position: relative; width: 220px; height: 220px; }
+.ringwrap svg { width: 220px; height: 220px; transform: rotate(-90deg); }
+.ringnum { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.ringnum b { font-size: 96px; line-height: 80px; font-weight: 800; font-stretch: 62%; letter-spacing: -0.03em; }
+.spec-bar { display: flex; height: 44px; border-radius: 10px; overflow: hidden; gap: 3px; }
+.spec-bar i { display: flex; align-items: center; padding-left: 10px; font-style: normal; font-weight: 800; font-stretch: 75%; font-size: 17px; color: var(--ground); min-width: 0; background: var(--es); }
+.spec-bar i[data-c='Analytics'] { background: var(--an); }
+.spec-bar i[data-c='Advertising'] { background: var(--ad); }
+.spec-bar i[data-c='Social'] { background: var(--so); }
+.spec-bar i[data-c='Functional'] { background: var(--fn); }
+.spec-bar i[data-c='Unknown'] { background: var(--uk); }
+@media (max-width: 1099px) { .hero { grid-template-columns: minmax(0, 1fr); } }

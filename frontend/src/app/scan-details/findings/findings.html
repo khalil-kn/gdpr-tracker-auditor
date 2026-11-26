@@ -1,0 +1,39 @@
+@if (list().length) {
+  <div class="g12">
+    <section class="panel s5" aria-labelledby="fl-h">
+      <div class="panel-h"><h2 id="fl-h" class="t-section">{{ list().length }} {{ list().length === 1 ? 'finding' : 'findings' }}</h2></div>
+      <ul>
+        @for (f of list(); track f.id) {
+          <li>
+            <button class="frow" type="button" [attr.aria-current]="selected()?.id === f.id" (click)="selectedId.set(f.id)">
+              <span class="pill {{ severity[f.severity].cls }}">{{ severity[f.severity].label }}</span>
+              <span class="t-strong">{{ f.title }}</span>
+            </button>
+          </li>
+        }
+      </ul>
+    </section>
+
+    @if (selected(); as f) {
+      <section class="panel s7" aria-labelledby="fd-h" aria-live="polite">
+        <div class="panel-h" style="align-items: flex-start">
+          <div>
+            <h2 id="fd-h" class="t-section">{{ f.title }}</h2>
+            <p class="small muted" style="margin-top: 4px">{{ f.consentState ? stateLabel[f.consentState] : 'Every consent state' }}</p>
+          </div>
+          <span class="pill {{ severity[f.severity].cls }}">{{ severity[f.severity].label }}</span>
+        </div>
+        <div class="panel-b" style="display: flex; flex-direction: column; gap: 16px">
+          <p>{{ f.description }}</p>
+          <div>
+            <h3 class="small muted" style="font-weight: 500; margin-bottom: 6px">Evidence</h3>
+            <ul>@for (e of f.evidence; track $index) { <li class="ev">{{ e }}</li> }</ul>
+          </div>
+          <p class="small muted">This is a technical observation from an automated browser, not a legal conclusion. It marks behaviour that needs a privacy review.</p>
+        </div>
+      </section>
+    }
+  </div>
+} @else {
+  <section class="panel"><div class="empty"><p class="t-strong">No findings for this scan.</p><p class="muted">Nothing matched a finding rule. That is an honest zero, not a compliance pass.</p></div></section>
+}

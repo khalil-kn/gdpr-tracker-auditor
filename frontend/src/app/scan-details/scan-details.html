@@ -1,0 +1,36 @@
+@let r = store.report();
+<div class="title-row">
+  <div>
+    <nav class="crumbs" aria-label="Breadcrumb"><a routerLink="/scans">Scans</a><span aria-hidden="true">/</span><span class="mono">{{ id() }}</span></nav>
+    <h1 class="t-display" style="font-size: clamp(32px, 5vw, 56px); line-height: 1">{{ r?.host ?? ' ' }}</h1>
+    @if (r) {
+      <p class="subline">
+        Scanned {{ r.createdAt | date: 'd MMM y, HH:mm' }} in {{ r.consentStates.length }} consent
+        {{ r.consentStates.length === 1 ? 'state' : 'states' }}, {{ r.observationSeconds }} s each, {{ r.viewport }} window.
+      </p>
+    }
+  </div>
+  <div class="actions">
+    <a class="btn btn-secondary" routerLink="/scans/new">Scan again</a>
+  </div>
+</div>
+
+@if (error(); as err) {
+  <div class="notice notice-error" role="alert"><span><span class="t-strong">Can't load this report.</span> {{ err }}</span></div>
+} @else if (r?.status === 'FAILED') {
+  <div class="notice notice-error" role="status">
+    <span><span class="t-strong">This scan failed, so there is no report.</span> {{ r!.failureReason ?? 'The scan stopped before it finished.' }}</span>
+  </div>
+} @else if (r) {
+  <nav class="tabs" aria-label="Report sections">
+    @for (t of tabs(); track t.path) {
+      <a class="tab" [routerLink]="t.path" routerLinkActive #a="routerLinkActive" [routerLinkActiveOptions]="{ exact: t.exact }"
+         [attr.aria-current]="a.isActive ? 'page' : null">
+        {{ t.label }} @if (t.count !== null) { <span class="count">{{ t.count }}</span> }
+      </a>
+    }
+  </nav>
+  <router-outlet />
+} @else {
+  <section class="panel" aria-busy="true"><div class="panel-b" style="padding-top: 24px"><span class="sk" style="height: 240px"></span></div></section>
+}

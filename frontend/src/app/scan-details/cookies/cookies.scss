@@ -1,0 +1,4 @@
+.weak { color: var(--high); font-weight: 700; }
+.set { display: inline-block; width: 10px; height: 10px; border-radius: 2px; background: var(--text); }
+.set.trk { background: var(--an); }
+.set.issue { background: var(--high); border-radius: 0; clip-path: polygon(50% 0, 100% 100%, 0 100%); }

@@ -1,0 +1,20 @@
+.orb { position: relative; width: 100%; max-width: 600px; aspect-ratio: 1; margin: 0 auto; }
+.rg { position: absolute; border: 1px dashed var(--hair); border-radius: 50%; transform: translate(-50%, -50%); left: 50%; top: 50%; }
+.sp { position: absolute; left: 50%; top: 50%; height: 1px; transform-origin: 0 0; background: var(--border); }
+.sp.live { background: var(--hair); }
+.nd { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; background: none; border: 0; padding: 0; cursor: pointer; color: var(--muted); }
+.nd .dot { display: block; border-radius: 50%; border: 2px solid transparent; box-sizing: content-box; }
+.nd .dot.off { background: transparent !important; border: 1.5px dashed var(--control); }
+.nd .dot.flag { outline: 2px solid var(--high); outline-offset: 4px; }
+.nl { font-size: 11px; line-height: 13px; font-weight: 600; font-stretch: 85%; white-space: nowrap; position: absolute; top: 100%; margin-top: 8px; }
+.nd.on .nl { color: var(--text); }
+.nd[aria-pressed='true'] .dot { border-color: var(--text); }
+.core { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 132px; height: 132px; border-radius: 50%; background: var(--text); color: var(--ground); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.core b { font-size: 54px; line-height: 48px; font-weight: 800; font-stretch: 62%; }
+.pick { background: none; border: 0; padding: 0; font-weight: 700; text-align: left; cursor: pointer; }
+.pick:hover { text-decoration: underline; text-underline-offset: 3px; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; }
+.count-box { padding: 12px; border-radius: 10px; background: var(--ground); display: flex; flex-direction: column; gap: 2px; }
+.dom-li { padding: 8px 0; border-top: 1px solid var(--rule); overflow-wrap: anywhere; }
+.tot td { border-top: 1px solid var(--control); }
+@media (max-width: 640px) { .core { width: 88px; height: 88px; } .core b { font-size: 36px; line-height: 32px; } .nl { display: none; } }
